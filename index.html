@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" id="htmlTag">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>مطحن سما فلور | Sama Flour Mill</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        mill: {
+                            gold: '#D99B26',
+                            dark: '#2C1E11',
+                            light: '#FDFBF7',
+                            accent: '#8B5A2B'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap');
+        body { font-family: 'Cairo', sans-serif; }
+        .card-3d {
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .card-3d:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 30px -10px rgba(217, 155, 38, 0.3);
+        }
+        /* Admin-only editable styling */
+        body.admin-mode [contenteditable="true"] {
+            outline: 2px dashed #D99B26;
+            background-color: rgba(217, 155, 38, 0.05);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+        body.admin-mode .admin-img-container:hover .admin-upload-badge {
+            display: flex !important;
+        }
+
+        /* Professional Animated Wheat 3D/Canvas Container Styling */
+        .wheat-canvas-container {
+            position: relative;
+            width: 100%;
+            height: 380px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle, rgba(217, 155, 38, 0.15) 0%, rgba(44, 30, 17, 0.6) 100%);
+            border-radius: 2rem;
+            border: 2px solid rgba(217, 155, 38, 0.3);
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        @keyframes swayWheat {
+            0% { transform: rotate(-3deg) scale(1); }
+            50% { transform: rotate(3deg) scale(1.02); }
+            100% { transform: rotate(-3deg) scale(1); }
+        }
+        .animated-wheat-svg {
+            animation: swayWheat 4s ease-in-out infinite;
+            filter: drop-shadow(0 10px 15px rgba(217, 155, 38, 0.4));
+        }
+    </style>
+</head>
+<body class="bg-mill-light text-mill-dark font-sans antialiased transition-colors duration-300" id="mainBody">
+
+    <!-- Admin Floating Top Bar -->
+    <div id="adminTopBar" class="bg-amber-600 text-white text-xs py-2 px-4 text-center font-bold hidden flex justify-between items-center shadow-lg sticky top-0 z-50">
+        <span data-key="adminBarText"><i class="fas fa-tools ml-1"></i> وضع التحكم الشامل مفعل: يمكنك تعديل النصوص بالضغط عليها مباشرة، إضافة/حذف المنتجات، وتغيير الصور من هاتفك! (الصور محفوظة تماماً ولا تتشال عند إعادة التحميل)</span>
+        <div class="space-x-2 space-x-reverse">
+            <button onclick="saveAllChanges()" class="bg-white text-amber-800 px-3 py-1 rounded shadow text-xs hover:bg-amber-100 transition"><i class="fas fa-save ml-1"></i> <span data-key="saveBtn">حفظ التغييرات</span></button>
+            <button onclick="logoutAdmin()" class="bg-red-700 text-white px-3 py-1 rounded shadow text-xs hover:bg-red-800 transition"><i class="fas fa-sign-out-alt ml-1"></i> <span data-key="logoutBtn">خروج</span></button>
+        </div>
+    </div>
+
+    <!-- Top Bar -->
+    <div class="bg-mill-dark text-white text-sm py-2.5 px-4 shadow-md">
+        <div class="container mx-auto flex flex-wrap justify-between items-center">
+            <div class="flex items-center space-x-4 space-x-reverse text-xs sm:text-sm">
+                <span><i class="fas fa-map-marker-alt text-mill-gold ml-1"></i> <span id="topAddr" class="editable-text" data-key="topAddr">قطعة 8 / 7، المنطقة الصناعية السادسة، مدينة 6 أكتوبر</span></span>
+                <a href="tel:01019384447" class="hover:text-mill-gold transition"><i class="fas fa-phone-alt text-mill-gold ml-1"></i> <span class="editable-text" data-key="phoneNum">0101 9384447</span></a>
+            </div>
+            <div class="flex items-center space-x-4 space-x-reverse mt-1 sm:mt-0">
+                <button onclick="toggleLanguage()" class="bg-mill-gold text-mill-dark px-3.5 py-1 rounded-full text-xs font-bold hover:bg-yellow-500 transition shadow">
+                    <span id="langBtnText">English</span>
+                </button>
+                <button onclick="openAdminModal()" class="text-xs text-gray-300 hover:text-mill-gold transition flex items-center gap-1">
+                    <i class="fas fa-lock"></i> <span id="adminLoginText" data-key="adminLoginText">دخول المسؤول</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="bg-white/95 backdrop-blur-md shadow-md sticky top-0 md:top-8 z-45 transition-all">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3 space-x-reverse">
+                <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center text-mill-dark font-bold text-xl shadow-md overflow-hidden border-2 border-mill-gold p-0.5 relative admin-img-container">
+                    <img id="brandLogoImg" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23D99B26'/><text x='50%' y='55%' font-size='40' dominant-baseline='middle' text-anchor='middle' fill='%23fff' font-family='Arial'>SF</text></svg>" alt="شعار مطحن سما فلور" class="w-full h-full object-cover rounded-full">
+                    <label id="logoUploadLbl" class="absolute inset-0 bg-black/60 text-white text-[10px] items-center justify-center cursor-pointer transition rounded-full hidden admin-upload-badge">
+                        <span data-key="changeImgText">تغيير</span>
+                        <input type="file" accept="image/*" class="hidden" onchange="compressAndSaveImage(event, 'sama_logo_img', 'brandLogoImg')">
+                    </label>
+                </div>
+                <div>
+                    <h1 class="text-xl font-extrabold text-mill-dark tracking-wide editable-text" id="brandTitle" data-key="brandTitle">مطحن سما فلور</h1>
+                    <p class="text-xs text-mill-accent font-bold editable-text" id="brandSub" data-key="brandSub">SAMA FLOUR MILL</p>
+                </div>
+            </div>
+            <div class="hidden md:flex items-center space-x-6 space-x-reverse font-semibold">
+                <a href="#home" class="hover:text-mill-gold transition editable-text" data-key="navHome" id="navHome">الرئيسية</a>
+                <a href="#products" class="hover:text-mill-gold transition editable-text" data-key="navProducts" id="navProducts">منتجاتنا</a>
+                <a href="#about" class="hover:text-mill-gold transition editable-text" data-key="navAbout" id="navAbout">عن المطحن</a>
+                <a href="#fleet" class="hover:text-mill-gold transition editable-text" data-key="navFleet" id="navFleet">أسطول التوزيع</a>
+                <a href="#contact" class="hover:text-mill-gold transition editable-text" data-key="navContact" id="navContact">اتصل بنا</a>
+            </div>
+            <div>
+                <a href="https://wa.me/201019384447" target="_blank" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-bold text-sm shadow-lg flex items-center gap-2 transition transform hover:scale-105">
+                    <i class="fab fa-whatsapp text-lg"></i> <span id="whatsappBtnText" class="editable-text" data-key="whatsappBtnText">واتساب مباشر</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section with Permanent 3D Professional Animated Wheat -->
+    <header id="home" class="relative bg-gradient-to-br from-mill-dark via-[#432C19] to-mill-accent text-white py-20 px-4 overflow-hidden">
+        <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#D99B26_1px,transparent_1px)] [background-size:16px_16px]"></div>
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center relative z-10">
+            <div class="space-y-6">
+                <span class="bg-mill-gold text-mill-dark px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider shadow editable-text" id="heroBadge" data-key="heroBadge">🌾 جودة عالمية بأيادٍ مصرية</span>
+                <h1 class="text-4xl md:text-6xl font-black leading-tight editable-text" id="heroTitle" data-key="heroTitle">من حبة القمح .. إلى أجود أنواع الدقيق</h1>
+                <p class="text-gray-200 text-lg leading-relaxed editable-text" id="heroDesc" data-key="heroDesc">نستخدم أحدث التقنيات وأجود الأقماح العالمية والمستوردة لإنتاج دقيق فاخر يناسب كافة احتياجات المخابز والمطاعم والمنازل بأعلى معايير الأمان الغذائي.</p>
+                <div class="flex flex-wrap gap-4 pt-4">
+                    <a href="#products" class="bg-mill-gold hover:bg-yellow-500 text-mill-dark px-8 py-3.5 rounded-2xl font-black shadow-xl transition transform hover:-translate-y-1 editable-text" id="heroBtnProducts" data-key="heroBtnProducts">استعرض المنتجات</a>
+                    <a href="https://wa.me/201019384447" target="_blank" class="border-2 border-white hover:bg-white hover:text-mill-dark text-white px-8 py-3.5 rounded-2xl font-bold transition flex items-center gap-2">
+                        <i class="fab fa-whatsapp text-xl text-green-400"></i> <span class="editable-text" data-key="heroBtnCall" id="heroBtnCall">اطلب الآن</span>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Permanent Professional 3D Animated Wheat Illustration Container -->
+            <div class="relative flex justify-center">
+                <div class="wheat-canvas-container admin-img-container">
+                    <svg class="animated-wheat-svg w-64 h-80" viewBox="0 0 200 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="wheatGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#FFE082" />
+                                <stop offset="50%" stop-color="#D99B26" />
+                                <stop offset="100%" stop-color="#8B5A2B" />
+                            </linearGradient>
+                            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                                <feGaussianBlur stdDeviation="6" result="blur" />
+                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                            </filter>
+                        </defs>
+                        <path d="M100 280 Q 95 180 100 20" stroke="url(#wheatGold)" stroke-width="6" stroke-linecap="round" />
+                        <path d="M100 60 C 130 50, 140 70, 100 80 C 70 70, 80 50, 100 60 Z" fill="url(#wheatGold)" filter="url(#glow)"/>
+                        <path d="M100 90 C 135 80, 145 100, 100 110 C 65 100, 75 80, 100 90 Z" fill="url(#wheatGold)" filter="url(#glow)"/>
+                        <path d="M100 120 C 140 110, 150 130, 100 140 C 50 130, 60 110, 100 120 Z" fill="url(#wheatGold)" filter="url(#glow)"/>
+                        <path d="M100 150 C 140 140, 150 160, 100 170 C 50 160, 60 140, 100 150 Z" fill="url(#wheatGold)" filter="url(#glow)"/>
+                        <path d="M100 180 C 135 170, 145 190, 100 200 C 55 190, 65 170, 100 180 Z" fill="url(#wheatGold)" filter="url(#glow)"/>
+                        <path d="M100 210 C 130 200, 140 220, 100 230 C 70 220, 80 200, 100 210 Z" fill="url(#wheatGold)"/>
+                        <path d="M100 20 Q 80 -10, 60 -20" stroke="#FFE082" stroke-width="2"/>
+                        <path d="M100 20 Q 100 -20, 100 -40" stroke="#FFE082" stroke-width="2.5"/>
+                        <path d="M100 20 Q 120 -10, 140 -20" stroke="#FFE082" stroke-width="2"/>
+                        <path d="M100 50 Q 50 40, 30 20" stroke="#FFE082" stroke-width="1.5"/>
+                        <path d="M100 50 Q 150 40, 170 20" stroke="#FFE082" stroke-width="1.5"/>
+                    </svg>
+
+                    <div class="absolute bottom-4 bg-mill-dark/80 backdrop-blur px-5 py-2 rounded-2xl text-center border border-mill-gold/40 shadow-xl">
+                        <h3 class="text-sm font-black text-mill-gold editable-text" data-key="wheatCardTitle">سنبلة القمح الذهبية الفاخرة</h3>
+                        <p class="text-[11px] text-gray-200 mt-0.5 editable-text" data-key="wheatCardDesc">أجود أنواع الأقماح العالمية بمطاحن سما فلور</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Products Section -->
+    <section id="products" class="py-20 px-4 bg-white">
+        <div class="container mx-auto">
+            <div class="text-center mb-16">
+                <span class="text-mill-accent font-bold text-sm tracking-widest uppercase editable-text" data-key="prodSubTop">منتجاتنا الفاخرة</span>
+                <h2 class="text-3xl md:text-4xl font-black text-mill-dark mt-2 editable-text" id="prodSectionTitle" data-key="prodSectionTitle">تشكيلة معتمدة تطابق المواصفات العالمية</h2>
+                <p class="text-gray-600 mt-2 max-w-xl mx-auto editable-text" id="prodSectionSub" data-key="prodSectionSub">دقيق فاخر وزوائد مطابقة للمواصفات القياسية المصرية معبأة بأحدث الخطوط الآلية</p>
+                
+                <!-- Admin Add Product Button -->
+                <div id="addProductContainer" class="mt-6 hidden">
+                    <button onclick="openAddProductModal()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-xl font-bold shadow-lg transition">
+                        <i class="fas fa-plus ml-1"></i> <span data-key="addProductBtn">إضافة منتج جديد من التليفون</span>
+                    </button>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8" id="productsGrid">
+                <!-- Dynamically rendered products -->
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-20 px-4 bg-mill-light border-y border-yellow-100">
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+            <div class="space-y-6">
+                <span class="text-mill-accent font-bold text-sm tracking-widest uppercase editable-text" data-key="aboutSubTop">التميز في الإنتاج</span>
+                <h2 class="text-3xl md:text-4xl font-black text-mill-dark editable-text" id="aboutTitle" data-key="aboutTitle">عن مطحن سما فلور</h2>
+                <p class="text-gray-700 leading-relaxed editable-text" id="aboutDesc1" data-key="aboutDesc1">نحن شركة رائدة في مجال طحين وتعبئة الدقيق الفاخر. نلتزم بأعلى معايير الجودة والنظافة والأمان الغذائي لضمان وصول أفضل منتج لعملائنا في جميع أنحاء الجمهورية.</p>
+                <p class="text-gray-700 leading-relaxed editable-text" id="aboutDesc2" data-key="aboutDesc2">يقع مقرنا الرئيسي ومصنعنا المتطور في المنطقة الصناعية السادسة بمدينة 6 أكتوبر، مجهزاً بأحدث خطوط الإنتاج والصوامع لضمان نقاء وجودة القمح.</p>
+                <div class="grid grid-cols-2 gap-4 pt-4">
+                    <div class="bg-white p-5 rounded-2xl shadow-md border-r-4 border-mill-gold">
+                        <h4 class="font-black text-mill-dark text-lg editable-text" id="stat1Title" data-key="stat1Title">أقماح مستوردة</h4>
+                        <p class="text-gray-500 text-xs mt-1 editable-text" id="stat1Desc" data-key="stat1Desc">من أجود الأسواق العالمية</p>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-md border-r-4 border-mill-gold">
+                        <h4 class="font-black text-mill-dark text-lg editable-text" id="stat2Title" data-key="stat2Title">رقابة صارمة</h4>
+                        <p class="text-gray-500 text-xs mt-1 editable-text" id="stat2Desc" data-key="stat2Desc">معايير المواصفات القياسية</p>
+                    </div>
+                </div>
+            </div>
+            <div class="relative flex justify-center">
+                <div class="relative w-full max-w-lg rounded-3xl overflow-hidden shadow-2xl border-4 border-mill-gold bg-white p-2 admin-img-container">
+                    <img id="aboutImg" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='600' height='400' viewBox='0 0 600 400'><rect width='600' height='400' fill='%23FDFBF7'/><text x='50%' y='50%' font-size='24' dominant-baseline='middle' text-anchor='middle' fill='%23D99B26' font-family='Arial'>مقر مطحن سما فلور</text></svg>" alt="مقر مطحن سما فلور" class="w-full h-80 object-cover rounded-2xl transform hover:scale-105 transition duration-700">
+                    <label id="aboutImgUploadLbl" class="absolute top-6 left-6 bg-amber-600 text-white text-xs px-3 py-1.5 rounded shadow cursor-pointer transition hidden admin-upload-badge">
+                        <i class="fas fa-camera ml-1"></i> <span data-key="changeAboutImgText">تغيير صورة المطحن</span>
+                        <input type="file" accept="image/*" class="hidden" onchange="compressAndSaveImage(event, 'sama_about_img', 'aboutImg')">
+                    </label>
+                    <div class="absolute bottom-6 right-6 bg-mill-dark/90 backdrop-blur text-white px-4 py-2 rounded-xl text-xs font-bold shadow-lg">
+                        📍 <span class="editable-text" data-key="aboutLocationBadge" id="aboutLocationBadge">مدينة 6 أكتوبر، المنطقة الصناعية السادسة</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Fleet Section -->
+    <section id="fleet" class="py-20 px-4 bg-white">
+        <div class="container mx-auto text-center">
+            <span class="text-mill-accent font-bold text-sm tracking-widest uppercase editable-text" data-key="fleetSubTop">الخدمات اللوجستية</span>
+            <h2 class="text-3xl md:text-4xl font-black text-mill-dark mb-4 mt-2 editable-text" id="fleetTitle" data-key="fleetTitle">أسطول التوزيع والنقل السريع</h2>
+            <p class="text-gray-600 max-w-2xl mx-auto mb-12 editable-text" id="fleetSub" data-key="fleetSub">نمتلك أسطولاً متطوراً ومجهزاً بالكامل من الشاحنات لضمان التوصيل السريع والآمن لكافة عملائنا في المواعيد المحددة.</p>
+            <div class="max-w-4xl mx-auto rounded-3xl overflow-hidden shadow-2xl border-4 border-mill-gold bg-white p-3 card-3d relative admin-img-container">
+                <img id="fleetImg" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='800' height='400' viewBox='0 0 800 400'><rect width='800' height='400' fill='%23FDFBF7'/><text x='50%' y='50%' font-size='28' dominant-baseline='middle' text-anchor='middle' fill='%23D99B26' font-family='Arial'>أسطول التوزيع والنقل - سما فلور</text></svg>" alt="أسطول شاحنات التوصيل مطحن سما فلور" class="w-full h-[400px] object-cover rounded-2xl">
+                <label id="fleetImgUploadLbl" class="absolute top-6 left-6 bg-amber-600 text-white text-xs px-3 py-1.5 rounded shadow cursor-pointer transition hidden admin-upload-badge">
+                    <i class="fas fa-camera ml-1"></i> <span data-key="changeFleetImgText">تغيير صورة الأسطول</span>
+                    <input type="file" accept="image/*" class="hidden" onchange="compressAndSaveImage(event, 'sama_fleet_img', 'fleetImg')">
+                </label>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact & Location Section -->
+    <section id="contact" class="py-20 px-4 bg-gradient-to-br from-mill-dark to-mill-accent text-white">
+        <div class="container mx-auto grid grid-cols-1 md:grid-cols-2 gap-12">
+            <div class="space-y-6">
+                <h2 class="text-3xl md:text-4xl font-black editable-text" id="contactTitle" data-key="contactTitle">تواصل معنا</h2>
+                <p class="text-gray-300 editable-text" id="contactSub" data-key="contactSub">يسعدنا تلقي استفساراتكم وطلباتكم طوال أيام الأسبوع.</p>
+                <div class="space-y-4 pt-4">
+                    <div class="flex items-start space-x-4 space-x-reverse bg-white/10 p-4 rounded-2xl backdrop-blur">
+                        <div class="bg-mill-gold text-mill-dark p-3.5 rounded-xl"><i class="fas fa-map-marker-alt text-xl"></i></div>
+                        <div>
+                            <h4 class="font-bold text-lg editable-text" id="addressLabel" data-key="addressLabel">العنوان</h4>
+                            <p class="text-gray-200 text-sm mt-1 leading-relaxed editable-text" id="addressVal" data-key="addressVal">قطعة 8 / 7، المنطقة الصناعية السادسة، ميدان الأرض الطيبة، مدينة 6 أكتوبر</p>
+                        </div>
+                    </div>
+                    <div class="flex items-start space-x-4 space-x-reverse bg-white/10 p-4 rounded-2xl backdrop-blur">
+                        <div class="bg-mill-gold text-mill-dark p-3.5 rounded-xl"><i class="fas fa-phone-alt text-xl"></i></div>
+                        <div>
+                            <h4 class="font-bold text-lg editable-text" id="phoneLabel" data-key="phoneLabel">رقم الهاتف / واتساب</h4>
+                            <p class="text-mill-gold text-lg mt-1 font-mono font-black tracking-wider">0101 9384447</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-white text-mill-dark p-8 rounded-3xl shadow-2xl">
+                <h3 class="text-2xl font-black mb-6 editable-text" id="formTitle" data-key="formTitle">اطلب عرض سعر أو استفسار</h3>
+                <form onsubmit="submitForm(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-bold mb-1 editable-text" id="formNameLabel" data-key="formNameLabel">الاسم الكريم</label>
+                        <input type="text" required class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-mill-gold bg-gray-50" id="clientName">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1 editable-text" id="formPhoneLabel" data-key="formPhoneLabel">رقم الهاتف / واتساب</label>
+                        <input type="text" required class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-mill-gold bg-gray-50" id="clientPhone">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-bold mb-1 editable-text" id="formMsgLabel" data-key="formMsgLabel">الرسالة أو الطلب</label>
+                        <textarea rows="3" required class="w-full border rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-mill-gold bg-gray-50" id="clientMsg"></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-mill-gold hover:bg-yellow-500 text-mill-dark py-3.5 rounded-xl font-black shadow-lg transition transform hover:-scale-[1.01] editable-text" id="formSubmitBtn" data-key="formSubmitBtn">إرسال الطلب عبر واتساب</button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-black text-gray-400 py-8 px-4 text-center text-sm border-t border-gray-800">
+        <div class="container mx-auto space-y-3">
+            <p class="editable-text" id="footerText" data-key="footerText">جميع الحقوق محفوظة © 2026 مطحن سما فلور (Sama Flour Mill)</p>
+            <p class="text-xs text-gray-500 editable-text" data-key="footerSub">صنع بحرفية لتلبية احتياجات السوق المصري بأعلى معايير الجودة.</p>
+        </div>
+    </footer>
+
+    <!-- Admin Panel / Modal -->
+    <div id="adminModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div id="adminModalBox" class="bg-white text-mill-dark p-6 rounded-3xl max-w-md w-full shadow-2xl space-y-4">
+            <div id="loginView">
+                <h3 class="text-xl font-black text-center" data-key="modalTitle">تسجيل دخول المسؤول</h3>
+                <p class="text-xs text-gray-600 text-center mt-1" data-key="modalDesc">أدخل كلمة المرور الخاصة بالمالك للوصول إلى لوحة التحكم والتعديل.</p>
+                <input type="password" id="adminPasswordInput" placeholder="كلمة المرور" class="w-full border rounded-xl px-4 py-3 mt-3 focus:outline-none focus:ring-2 focus:ring-mill-gold text-center tracking-widest font-mono">
+                <div class="flex gap-2 mt-4">
+                    <button onclick="verifyAdmin()" class="flex-1 bg-mill-gold text-mill-dark py-3 rounded-xl font-black hover:bg-yellow-500 transition shadow" data-key="modalLoginBtn">دخول</button>
+                    <button onclick="closeAdminModal()" class="flex-1 bg-gray-200 text-gray-700 py-3 rounded-bold hover:bg-gray-300 transition" data-key="modalCancelBtn">إلغاء</button>
+                </div>
+            </div>
+            
+            <div id="dashboardView" class="hidden space-y-4">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <h3 class="text-xl font-black text-mill-dark" data-key="dashTitle">لوحة تحكم المالك</h3>
+                    <button onclick="closeAdminModal()" class="text-gray-500 hover:text-red-600"><i class="fas fa-times text-lg"></i></button>
+                </div>
+                <p class="text-xs text-green-600 font-bold" data-key="dashSub">تم تسجيل الدخول بنجاح! تم تفعيل وضع التعديل المباشر على الموقع وإضافة زر إدارة المنتجات وتغيير الصور.</p>
+                <div class="bg-amber-50 p-3 rounded-xl text-xs text-amber-800 space-y-1">
+                    <p><i class="fas fa-info-circle ml-1"></i> <span data-key="dashTip1"><b>لتعديل أي نص:</b> انقر مباشرة على أي نص في الموقع وقم بكتابة ما تريد.</span></p>
+                    <p><i class="fas fa-info-circle ml-1"></i> <span data-key="dashTip2"><b>لتغيير الصور:</b> ضع مؤشر الماوس فوق أي صورة (أنت فقط كمسؤول) لتظهر لك أزرار تغيير الصور.</span></p>
+                    <p><i class="fas fa-info-circle ml-1"></i> <span data-key="dashTip3"><b>لإضافة/حذف المنتجات:</b> استخدم زر 'إضافة منتج جديد' أو زر الحذف على المنتجات.</span></p>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="saveAllChanges()" class="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition text-sm shadow" data-key="saveAllBtn">حفظ كافة التغييرات</button>
+                    <button onclick="logoutAdmin()" class="bg-red-100 text-red-600 px-4 py-3 rounded-xl font-bold hover:bg-red-200 transition text-sm" data-key="logoutAdminBtn">خروج</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Product Modal -->
+    <div id="addProductModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-50 flex items-center justify-center p-4">
+        <div class="bg-white text-mill-dark p-6 rounded-3xl max-w-md w-full shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-xl font-black text-mill-dark" data-key="addProdModalTitle">إضافة منتج جديد</h3>
+                <button onclick="closeAddProductModal()" class="text-gray-500 hover:text-red-600"><i class="fas fa-times text-lg"></i></button>
+            </div>
+            <div class="space-y-3">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1" data-key="lblProdImg">صورة المنتج (من التليفون):</label>
+                    <input type="file" id="newProdImgFile" accept="image/*" class="w-full border rounded-lg px-3 py-2 text-sm bg-gray-50">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1" data-key="lblProdTitle">اسم المنتج:</label>
+                    <input type="text" id="newProdTitle" placeholder="مثال: دقيق فاخر استخراج 72%" class="w-full border rounded-lg px-3 py-2 text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1" data-key="lblProdDesc">وصف المنتج:</label>
+                    <textarea id="newProdDesc" rows="2" placeholder="تفاصيل المنتج..." class="w-full border rounded-lg px-3 py-2 text-sm"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 mb-1" data-key="lblProdBadge">شارة المنتج (Badge):</label>
+                    <input type="text" id="newProdBadge" placeholder="مثال: استخراج 72% أو جديد" class="w-full border rounded-lg px-3 py-2 text-sm" value="منتج مميز">
+                </div>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="saveNewProduct()" class="flex-1 bg-green-600 text-white py-3 rounded-xl font-bold hover:bg-green-700 transition text-sm shadow" data-key="addProdSubmitBtn">إضافة المنتج للموقع</button>
+                <button onclick="closeAddProductModal()" class="bg-gray-200 text-gray-700 px-4 py-3 rounded-xl font-bold hover:bg-gray-300 transition text-sm" data-key="cancelBtn">إلغاء</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating WhatsApp -->
+    <a href="https://wa.me/201019384447" target="_blank" class="fixed bottom-6 left-6 bg-green-600 text-white w-14 h-14 rounded-full flex items-center justify-center text-3xl shadow-2xl hover:bg-green-700 transition transform hover:scale-110 z-40">
+        <i class="fab fa-whatsapp"></i>
+    </a>
+
+    <!-- JavaScript Handling All Interactions & Image Compression for Persistence -->
+    <script>
+        const translations = {
+            ar: {
+                adminBarText: "وضع التحكم الشامل مفعل: يمكنك تعديل النصوص بالضغط عليها مباشرة، إضافة/حذف المنتجات، وتغيير الصور من هاتفك! (الصور محفوظة تماماً ولا تتشال عند إعادة التحميل)",
+                saveBtn: "حفظ التغييرات",
+                logoutBtn: "خروج",
+                topAddr: "قطعة 8 / 7، المنطقة الصناعية السادسة، مدينة 6 أكتوبر",
+                phoneNum: "0101 9384447",
+                langBtnText: "English",
+                adminLoginText: "دخول المسؤول",
+                changeImgText: "تغيير",
+                brandTitle: "مطحن سما فلور",
+                brandSub: "SAMA FLOUR MILL",
+                navHome: "الرئيسية",
+                navProducts: "منتجاتنا",
+                navAbout: "عن المطحن",
+                navFleet: "أسطول التوزيع",
+                navContact: "اتصل بنا",
+                whatsappBtnText: "واتساب مباشر",
+                heroBadge: "🌾 جودة عالمية بأيادٍ مصرية",
+                heroTitle: "من حبة القمح .. إلى أجود أنواع الدقيق",
+                heroDesc: "نستخدم أحدث التقنيات وأجود الأقماح العالمية والمستوردة لإنتاج دقيق فاخر يناسب كافة احتياجات المخابز والمطاعم والمنازل بأعلى معايير الأمان الغذائي.",
+                heroBtnProducts: "استعرض المنتجات",
+                heroBtnCall: "اطلب الآن",
+                wheatCardTitle: "سنبلة القمح الذهبية الفاخرة",
+                wheatCardDesc: "أجود أنواع الأقماح العالمية بمطاحن سما فلور",
+                prodSubTop: "منتجاتنا الفاخرة",
+                prodSectionTitle: "تشكيلة معتمدة تطابق المواصفات العالمية",
+                prodSectionSub: "دقيق فاخر وزوائد مطابقة للمواصفات القياسية المصرية معبأة بأحدث الخطوط الآلية",
+                addProductBtn: "إضافة منتج جديد من التليفون",
+                aboutSubTop: "التميز في الإنتاج",
+                aboutTitle: "عن مطحن سما فلور",
+                aboutDesc1: "نحن شركة رائدة في مجال طحين وتعبئة الدقيق الفاخر. نلتزم بأعلى معايير الجودة والنظافة والأمان الغذائي لضمان وصول أفضل منتج لعملائنا في جميع أنحاء الجمهورية.",
+                aboutDesc2: "يقع مقرنا الرئيسي ومصنعنا المتطور في المنطقة الصناعية السادسة بمدينة 6 أكتوبر، مجهزاً بأحدث خطوط الإنتاج والصوامع لضمان نقاء وجودة القمح.",
+                stat1Title: "أقماح مستوردة",
+                stat1Desc: "من أجود الأسواق العالمية",
+                stat2Title: "رقابة صارمة",
+                stat2Desc: "معايير المواصفات القياسية",
+                changeAboutImgText: "تغيير صورة المطحن",
+                aboutLocationBadge: "مدينة 6 أكتوبر، المنطقة الصناعية السادسة",
+                fleetSubTop: "الخدمات اللوجستية",
+                fleetTitle: "أسطول التوزيع والنقل السريع",
+                fleetSub: "نمتلك أسطولاً متطوراً ومجهزاً بالكامل من الشاحنات لضمان التوصيل السريع والآمن لكافة عملائنا في المواعيد المحددة.",
+                changeFleetImgText: "تغيير صورة الأسطول",
+                contactTitle: "تواصل معنا",
+                contactSub: "يسعدنا تلقي استفساراتكم وطلباتكم طوال أيام الأسبوع.",
+                addressLabel: "العنوان",
+                addressVal: "قطعة 8 / 7، المنطقة الصناعية السادسة، ميدان الأرض الطيبة، مدينة 6 أكتوبر",
+                phoneLabel: "رقم الهاتف / واتساب",
+                formTitle: "اطلب عرض سعر أو استفسار",
+                formNameLabel: "الاسم الكريم",
+                formPhoneLabel: "رقم الهاتف / واتساب",
+                formMsgLabel: "الرسالة أو الطلب",
+                formSubmitBtn: "إرسال الطلب عبر واتساب",
+                footerText: "جميع الحقوق محفوظة © 2026 مطحن سما فلور (Sama Flour Mill)",
+                footerSub: "صنع بحرفية لتلبية احتياجات السوق المصري بأعلى معايير الجودة.",
+                modalTitle: "تسجيل دخول المسؤول",
+                modalDesc: "أدخل كلمة المرور الخاصة بالمالك للوصول إلى لوحة التحكم والتعديل.",
+                modalLoginBtn: "دخول",
+                modalCancelBtn: "إلغاء",
+                dashTitle: "لوحة تحكم المالك",
+                dashSub: "تم تسجيل الدخول بنجاح! تم تفعيل وضع التعديل المباشر على الموقع وإضافة زر إدارة المنتجات وتغيير الصور.",
+                dashTip1: "<b>لتعديل أي نص:</b> انقر مباشرة على أي نص في الموقع وقم بكتابة ما تريد.",
+                dashTip2: "<b>لتغيير الصور:</b> ضع مؤشر الماوس فوق أي صورة (أنت فقط كمسؤول) لتظهر لك أزرار تغيير الصور.",
+                dashTip3: "<b>لإضافة/حذف المنتجات:</b> استخدم زر 'إضافة منتج جديد' أو زر الحذف على المنتجات.",
+                saveAllBtn: "حفظ كافة التغييرات",
+                logoutAdminBtn: "خروج",
+                addProdModalTitle: "إضافة منتج جديد",
+                lblProdImg: "صورة المنتج (من التليفون):",
+                lblProdTitle: "اسم المنتج:",
+                lblProdDesc: "وصف المنتج:",
+                lblProdBadge: "شارة المنتج (Badge):",
+                addProdSubmitBtn: "إضافة المنتج للموقع",
+                cancelBtn: "إلغاء",
+                orderWhatsapp: "اطلب عبر واتساب",
+                changeProdImgText: "تغيير صورة المنتج",
+                changeHeroImgText: "تغيير صورة الواجهة"
+            },
+            en: {
+                adminBarText: "Admin Mode Active: Edit texts directly by clicking them, add/remove products, and change images from your phone! (Images are permanently saved across reloads)",
+                saveBtn: "Save Changes",
+                logoutBtn: "Logout",
+                topAddr: "Plot 8/7, 6th Industrial Zone, 6th of October City",
+                phoneNum: "0101 9384447",
+                langBtnText: "العربية",
+                adminLoginText: "Admin Login",
+                changeImgText: "Change",
+                brandTitle: "Sama Flour Mill",
+                brandSub: "SAMA FLOUR MILL",
+                navHome: "Home",
+                navProducts: "Products",
+                navAbout: "About Us",
+                navFleet: "Distribution Fleet",
+                navContact: "Contact Us",
+                whatsappBtnText: "Direct WhatsApp",
+                heroBadge: "🌾 Global Quality with Egyptian Hands",
+                heroTitle: "From Wheat Grain .. To Finest Flour",
+                heroDesc: "We use the latest technologies and the finest global imported wheats to produce premium flour suitable for all bakeries, restaurants, and homes.",
+                heroBtnProducts: "View Products",
+                heroBtnCall: "Order Now",
+                wheatCardTitle: "Golden Wheat Ear Art",
+                wheatCardDesc: "Finest global wheat at Sama Flour Mills",
+                prodSubTop: "Our Premium Products",
+                prodSectionTitle: "Certified Products Matching Global Standards",
+                prodSectionSub: "Premium flour and by-products matching Egyptian standards, packed via modern automated lines",
+                addProductBtn: "Add New Product from Phone",
+                aboutSubTop: "Excellence in Production",
+                aboutTitle: "About Sama Flour Mill",
+                aboutDesc1: "We are a leading company in milling and packaging premium flour. We are committed to the highest standards of quality, hygiene, and food safety.",
+                aboutDesc2: "Our headquarters and advanced factory are located in the 6th Industrial Zone, 6th of October City, equipped with the latest production lines.",
+                stat1Title: "Imported Wheat",
+                stat1Desc: "From the finest global markets",
+                stat2Title: "Strict Control",
+                stat2Desc: "Standard specification compliance",
+                changeAboutImgText: "Change Mill Image",
+                aboutLocationBadge: "6th of October City, 6th Industrial Zone",
+                fleetSubTop: "Logistics",
+                fleetTitle: "Distribution & Fast Transport Fleet",
+                fleetSub: "We own an advanced, fully equipped fleet of trucks to ensure fast and secure delivery to all our customers on time.",
+                changeFleetImgText: "Change Fleet Image",
+                contactTitle: "Contact Us",
+                contactSub: "We are happy to receive your inquiries and orders throughout the week.",
+                addressLabel: "Address",
+                addressVal: "Plot 8/7, 6th Industrial Zone, Al-Ard Al-Tayeba Square, 6th of October City",
+                phoneLabel: "Phone / WhatsApp",
+                formTitle: "Request a Quote or Inquiry",
+                formNameLabel: "Full Name",
+                formPhoneLabel: "Phone / WhatsApp",
+                formMsgLabel: "Message or Order",
+                formSubmitBtn: "Send Request via WhatsApp",
+                footerText: "All Rights Reserved © 2026 Sama Flour Mill",
+                footerSub: "Crafted with care to meet Egyptian market needs with highest quality standards.",
+                modalTitle: "Admin Login",
+                modalDesc: "Enter owner password to access dashboard and make edits.",
+                modalLoginBtn: "Login",
+                modalCancelBtn: "Cancel",
+                dashTitle: "Owner Dashboard",
+                dashSub: "Logged in successfully! Direct text editing, product management, and image upload are now active.",
+                dashTip1: "<b>To edit text:</b> Click directly on any text on the website and type what you want.",
+                dashTip2: "<b>To change images:</b> Hover over any image (admin only) to see the image upload button.",
+                dashTip3: "<b>To add/remove products:</b> Use the 'Add New Product' button or delete button on products.",
+                saveAllBtn: "Save All Changes",
+                logoutAdminBtn: "Logout",
+                addProdModalTitle: "Add New Product",
+                lblProdImg: "Product Image (from phone):",
+                lblProdTitle: "Product Name:",
+                lblProdDesc: "Product Description:",
+                lblProdBadge: "Product Badge:",
+                addProdSubmitBtn: "Add Product to Site",
+                cancelBtn: "Cancel",
+                orderWhatsapp: "Order via WhatsApp",
+                changeProdImgText: "Change Product Image",
+                changeHeroImgText: "Change Hero Image"
+            }
+        };
+
+        let currentLang = localStorage.getItem('sama_lang') || 'ar';
+        let isAdminLoggedIn = localStorage.getItem('sama_is_admin') === 'true';
+
+        const defaultProducts = [
+            {
+                id: 1,
+                img: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'><rect width='400' height='400' fill='%23FDFBF7'/><text x='50%' y='50%' font-size='22' dominant-baseline='middle' text-anchor='middle' fill='%23D99B26' font-family='Arial'>دقيق نور باديا الفاخر</text></svg>",
+                badge: "استخراج 72%",
+                badgeColor: "bg-mill-gold text-mill-dark",
+                title: "دقيق نور باديا الفاخر",
+                desc: "مطحون من أجود الأقماح العالمية. طحن وتعبئة شركة مطاحن سما فلور - مدينة 6 أكتوبر.",
+                tagText: "جودة معتمدة"
+            },
+            {
+                id: 2,
+                img: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'><rect width='400' height='400' fill='%23FDFBF7'/><text x='50%' y='50%' font-size='22' dominant-baseline='middle' text-anchor='middle' fill='%23D99B26' font-family='Arial'>دقيق باديا السياحي الفاخر</text></svg>",
+                badge: "استخراج 72%",
+                badgeColor: "bg-mill-gold text-mill-dark",
+                title: "دقيق باديا السياحي الفاخر",
+                desc: "جودة فائقة ومخصصة للمخبوزات السياحية والفينو والحلويات. مطحون ومعبأ بواسطة مطاحن سما فلور.",
+                tagText: "مخبوزات وسياحي"
+            },
+            {
+                id: 3,
+                img: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'><rect width='400' height='400' fill='%23FDFBF7'/><text x='50%' y='50%' font-size='22' dominant-baseline='middle' text-anchor='middle' fill='%23D99B26' font-family='Arial'>خليط زوائد سما فلاور</text></svg>",
+                badge: "علف / زوائد",
+                badgeColor: "bg-red-600 text-white",
+                title: "خليط زوائد سما فلاور",
+                desc: "مطابق للمواصفات القياسية المصرية رقم 2006/3028. الوزن القائم 30 كجم من أجود الأقماح العالمية.",
+                tagText: "وزن قائم 30 كجم"
+            }
+        ];
+
+        let products = JSON.parse(localStorage.getItem('sama_products')) || defaultProducts;
+
+        window.toggleLanguage = function() {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            localStorage.setItem('sama_lang', currentLang);
+            applyLanguage();
+        };
+
+        function applyLanguage() {
+            const html = document.getElementById('htmlTag');
+            html.setAttribute('dir', currentLang === 'ar' ? 'rtl' : 'ltr');
+            html.setAttribute('lang', currentLang);
+
+            const dict = translations[currentLang];
+            document.querySelectorAll('[data-key]').forEach(el => {
+                const key = el.getAttribute('data-key');
+                if (dict[key]) {
+                    el.innerHTML = dict[key];
+                }
+            });
+            const langBtn = document.getElementById('langBtnText');
+            if(langBtn) langBtn.innerText = currentLang === 'ar' ? 'English' : 'العربية';
+        }
+
+        window.openAdminModal = function() {
+            if (isAdminLoggedIn) {
+                document.getElementById('adminModal').classList.remove('hidden');
+                document.getElementById('loginView').classList.add('hidden');
+                document.getElementById('dashboardView').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('adminModal').classList.remove('hidden');
+            document.getElementById('loginView').classList.remove('hidden');
+            document.getElementById('dashboardView').classList.add('hidden');
+        };
+
+        window.closeAdminModal = function() {
+            document.getElementById('adminModal').classList.add('hidden');
+            const passInput = document.getElementById('adminPasswordInput');
+            if(passInput) passInput.value = '';
+        };
+
+        window.verifyAdmin = function() {
+            const pass = document.getElementById('adminPasswordInput').value;
+            if (pass === 'sama2026') {
+                isAdminLoggedIn = true;
+                localStorage.setItem('sama_is_admin', 'true');
+                closeAdminModal();
+                activateAdminMode();
+                alert('تم تسجيل الدخول بنجاح! يمكنك الآن تعديل أي نص، وتغيير الصور، وإضافة المنتجات.');
+            } else {
+                alert('كلمة المرور غير صحيحة!');
+            }
+        };
+
+        window.logoutAdmin = function() {
+            isAdminLoggedIn = false;
+            localStorage.setItem('sama_is_admin', 'false');
+            deactivateAdminMode();
+            closeAdminModal();
+            alert('تم تسجيل الخروج بنجاح.');
+        };
+
+        function activateAdminMode() {
+            document.getElementById('mainBody').classList.add('admin-mode');
+            document.getElementById('adminTopBar').classList.remove('hidden');
+            document.getElementById('addProductContainer').classList.remove('hidden');
+
+            document.querySelectorAll('.editable-text').forEach(el => {
+                el.setAttribute('contenteditable', 'true');
+            });
+            renderProducts();
+        }
+
+        function deactivateAdminMode() {
+            document.getElementById('mainBody').classList.remove('admin-mode');
+            document.getElementById('adminTopBar').classList.add('hidden');
+            document.getElementById('addProductContainer').classList.add('hidden');
+
+            document.querySelectorAll('.editable-text').forEach(el => {
+                el.removeAttribute('contenteditable');
+            });
+            renderProducts();
+        }
+
+        window.saveAllChanges = function() {
+            const textData = {};
+            document.querySelectorAll('.editable-text').forEach(el => {
+                const key = el.getAttribute('data-key');
+                if (key) {
+                    textData[key] = el.innerHTML;
+                }
+            });
+            localStorage.setItem('sama_texts', JSON.stringify(textData));
+            localStorage.setItem('sama_products', JSON.stringify(products));
+            alert('تم حفظ كافة التغييرات والصور بنجاح على المتصفح ولن تتشال عند إعادة التحميل!');
+        };
+
+        // Robust image compressor & persistent saver to avoid localStorage quota issues and broken image paths
+        window.compressAndSaveImage = function(e, storageKey, elementId, prodId = null) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800;
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    // Compress to JPEG with 0.8 quality so it reliably fits in localStorage and loads instantly
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+
+                    try {
+                        if (prodId !== null) {
+                            products = products.map(p => {
+                                if (p.id === prodId) p.img = dataUrl;
+                                return p;
+                            });
+                            localStorage.setItem('sama_products', JSON.stringify(products));
+                            renderProducts();
+                        } else {
+                            localStorage.setItem(storageKey, dataUrl);
+                            const el = document.getElementById(elementId);
+                            if (el) el.src = dataUrl;
+                        }
+                        alert('تم تحديث وحفظ الصورة بنجاح ولن تختفي عند إعادة التحميل!');
+                    } catch (err) {
+                        alert('حجم الصورة كبير جداً أو ذاكرة التخزين ممتلئة. حاول اختيار صورة أصغر حجماً.');
+                        console.error(err);
+                    }
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        };
+
+        function loadSavedContent() {
+            // Load texts
+            const savedTexts = JSON.parse(localStorage.getItem('sama_texts'));
+            if (savedTexts) {
+                for (let key in savedTexts) {
+                    const el = document.querySelector(`[data-key="${key}"]`);
+                    if (el) {
+                        el.innerHTML = savedTexts[key];
+                    }
+                }
+            }
+            // Load Logo
+            const savedLogo = localStorage.getItem('sama_logo_img');
+            if (savedLogo) {
+                const logoImg = document.getElementById('brandLogoImg');
+                if(logoImg) logoImg.src = savedLogo;
+            }
+            // Load About Image
+            const savedAboutImg = localStorage.getItem('sama_about_img');
+            if (savedAboutImg) {
+                const aboutImg = document.getElementById('aboutImg');
+                if(aboutImg) aboutImg.src = savedAboutImg;
+            }
+            // Load Fleet Image
+            const savedFleetImg = localStorage.getItem('sama_fleet_img');
+            if (savedFleetImg) {
+                const fleetImg = document.getElementById('fleetImg');
+                if(fleetImg) fleetImg.src = savedFleetImg;
+            }
+        }
+
+        window.updateProductField = function(prodId, field, val) {
+            products = products.map(p => {
+                if (p.id === prodId) p[field] = val;
+                return p;
+            });
+            localStorage.setItem('sama_products', JSON.stringify(products));
+        };
+
+        window.deleteProduct = function(prodId) {
+            if (confirm('هل أنت متأكد من حذف هذا المنتج؟')) {
+                products = products.filter(p => p.id !== prodId);
+                localStorage.setItem('sama_products', JSON.stringify(products));
+                renderProducts();
+                alert('تم حذف المنتج بنجاح.');
+            }
+        };
+
+        window.openAddProductModal = function() {
+            document.getElementById('addProductModal').classList.remove('hidden');
+        };
+
+        window.closeAddProductModal = function() {
+            document.getElementById('addProductModal').classList.add('hidden');
+            document.getElementById('newProdTitle').value = '';
+            document.getElementById('newProdDesc').value = '';
+            document.getElementById('newProdBadge').value = 'منتج مميز';
+            document.getElementById('newProdImgFile').value = '';
+        };
+
+        window.saveNewProduct = function() {
+            const title = document.getElementById('newProdTitle').value;
+            const desc = document.getElementById('newProdDesc').value;
+            const badge = document.getElementById('newProdBadge').value;
+            const imgFile = document.getElementById('newProdImgFile').files[0];
+
+            if (!title || !desc) {
+                alert('يرجى إدخال اسم المنتج ووصفه على الأقل.');
+                return;
+            }
+
+            if (imgFile) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 800;
+                        const MAX_HEIGHT = 800;
+                        let width = img.width;
+                        let height = img.height;
+                        if (width > height) {
+                            if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                        } else {
+                            if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                        }
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                        addProductToStorage(title, desc, badge, dataUrl);
+                    };
+                    img.src = evt.target.result;
+                };
+                reader.readAsDataURL(imgFile);
+            } else {
+                addProductToStorage(title, desc, badge, 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400"><rect width="400" height="400" fill="%23FDFBF7"/><text x="50%" y="50%" font-size="20" dominant-baseline="middle" text-anchor="middle" fill="%23D99B26">منتج جديد</text></svg>');
+            }
+        };
+
+        function addProductToStorage(title, desc, badge, imgSrc) {
+            const newProd = {
+                id: Date.now(),
+                img: imgSrc,
+                badge: badge,
+                badgeColor: "bg-mill-gold text-mill-dark",
+                title: title,
+                desc: desc,
+                tagText: "جودة عالية"
+            };
+            products.push(newProd);
+            localStorage.setItem('sama_products', JSON.stringify(products));
+            renderProducts();
+            closeAddProductModal();
+            alert('تم إضافة المنتج الجديد وحفظه بنجاح!');
+        }
+
+        window.submitForm = function(e) {
+            e.preventDefault();
+            const name = document.getElementById('clientName').value;
+            const phone = document.getElementById('clientPhone').value;
+            const msg = document.getElementById('clientMsg').value;
+            
+            const url = `https://wa.me/201019384447?text=` + encodeURIComponent('الاسم: ' + name + '\nالهاتف: ' + phone + '\nالطلب: ' + msg);
+            window.open(url, '_blank');
+        };
+
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            if(!grid) return;
+            grid.innerHTML = '';
+            products.forEach((prod) => {
+                const card = document.createElement('div');
+                card.className = "bg-mill-light border border-yellow-200/60 rounded-3xl overflow-hidden shadow-lg card-3d flex flex-col justify-between relative admin-img-container group";
+                
+                let adminDeleteBtn = isAdminLoggedIn ? `
+                    <button onclick="deleteProduct(${prod.id})" class="absolute top-4 left-4 bg-red-600 text-white w-9 h-9 rounded-full flex items-center justify-center shadow-lg hover:bg-red-700 transition z-20" title="حذف المنتج">
+                        <i class="fas fa-trash text-xs"></i>
+                    </button>
+                ` : '';
+
+                let imageUploadOverlay = `
+                    <label class="absolute inset-0 bg-black/50 text-white text-xs items-center justify-center cursor-pointer transition z-10 font-bold gap-1 hidden admin-upload-badge">
+                        <i class="fas fa-camera"></i> <span data-key="changeProdImgText">تغيير صورة المنتج</span>
+                        <input type="file" accept="image/*" class="hidden" onchange="compressAndSaveImage(event, null, null, ${prod.id})">
+                    </label>
+                `;
+
+                card.innerHTML = `
+                    ${adminDeleteBtn}
+                    <div>
+                        <div class="h-72 bg-white relative overflow-hidden flex items-center justify-center p-4 border-b border-gray-100">
+                            <img src="${prod.img}" alt="${prod.title}" class="w-full h-full object-contain transform hover:scale-105 transition duration-500">
+                            <span class="absolute top-4 right-4 ${prod.badgeColor} text-xs font-black px-3.5 py-1.5 rounded-full shadow-md">${prod.badge}</span>
+                            ${imageUploadOverlay}
+                        </div>
+                        <div class="p-6 space-y-3">
+                            <h3 class="text-xl font-extrabold text-mill-dark ${isAdminLoggedIn ? 'editable-product-field' : ''}" ${isAdminLoggedIn ? `contenteditable="true" onblur="updateProductField(${prod.id}, 'title', this.innerText)"` : ''}>${prod.title}</h3>
+                            <p class="text-gray-600 text-sm leading-relaxed ${isAdminLoggedIn ? 'editable-product-field' : ''}" ${isAdminLoggedIn ? `contenteditable="true" onblur="updateProductField(${prod.id}, 'desc', this.innerText)"` : ''}>${prod.desc}</p>
+                        </div>
+                    </div>
+                    <div class="p-6 pt-0">
+                        <div class="border-t pt-4 flex justify-between items-center">
+                            <span class="text-xs font-bold text-mill-accent bg-yellow-50 px-3 py-1 rounded-lg">${prod.tagText}</span>
+                            <a href="https://wa.me/201019384447?text=${encodeURIComponent('أريد الاستفسار عن ' + prod.title)}" target="_blank" class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-700 transition flex items-center gap-1.5 shadow">
+                                <i class="fab fa-whatsapp text-sm"></i> <span data-key="orderWhatsapp">اطلب عبر واتساب</span>
+                            </a>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            applyLanguage();
+            loadSavedContent();
+            renderProducts();
+            if (isAdminLoggedIn) {
+                activateAdminMode();
+            } else {
+                deactivateAdminMode();
+            }
+        });
+    </script>
+</body>
+</html>
